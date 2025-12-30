@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,38 +13,46 @@ interface WasteAnalysisResult {
   binType: string;
   disposalTip: string;
   confidence: number;
+  pointsEarned?: number;
+  newBadges?: string[];
 }
 
 const wasteCategories = {
   wet_organic: {
     binColor: 'green',
     binType: 'Biodegradable Bin',
-    defaultTip: 'Dispose in the green bin. Avoid plastic bags.'
+    defaultTip: 'Dispose in the green bin. Avoid plastic bags.',
+    basePoints: 10
   },
   dry_recyclable: {
     binColor: 'blue',
     binType: 'Recyclable Bin',
-    defaultTip: 'Rinse and clean before disposal.'
+    defaultTip: 'Rinse and clean before disposal.',
+    basePoints: 15
   },
   hazardous: {
     binColor: 'red',
     binType: 'Hazardous Waste Bin',
-    defaultTip: 'Handle with care. Do not mix with regular waste.'
+    defaultTip: 'Handle with care. Do not mix with regular waste.',
+    basePoints: 20
   },
   e_waste: {
     binColor: 'black',
     binType: 'E-Waste Collection Bin',
-    defaultTip: 'Remove batteries if possible. Take to certified collection centers.'
+    defaultTip: 'Remove batteries if possible. Take to certified collection centers.',
+    basePoints: 25
   },
   reject_sanitary: {
     binColor: 'yellow',
     binType: 'Incineration / Sanitary Bin',
-    defaultTip: 'Wrap securely before disposal.'
+    defaultTip: 'Wrap securely before disposal.',
+    basePoints: 10
   },
   unknown: {
     binColor: 'gray',
     binType: 'Unknown',
-    defaultTip: 'Please try again with a clearer image.'
+    defaultTip: 'Please try again with a clearer image.',
+    basePoints: 0
   }
 };
 
@@ -53,7 +62,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64 } = await req.json();
+    const { imageBase64, userId } = await req.json();
     
     if (!imageBase64) {
       console.error('No image provided');
@@ -69,7 +78,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log('Analyzing waste image...');
+    console.log('Analyzing waste image...', userId ? `for user ${userId}` : 'anonymous');
 
     const systemPrompt = `You are an expert waste classification AI. Analyze the image and identify the waste item, then classify it into exactly ONE of these categories:
 
@@ -165,6 +174,12 @@ If the image is blurry, unclear, or doesn't show waste, use "unknown" category w
 
     const category = parsed.category in wasteCategories ? parsed.category : 'unknown';
     const categoryInfo = wasteCategories[category as keyof typeof wasteCategories];
+    const confidence = Math.min(1, Math.max(0, parsed.confidence || 0.5));
+    
+    // Calculate points based on confidence
+    const pointsEarned = category !== 'unknown' 
+      ? Math.round(categoryInfo.basePoints * confidence)
+      : 0;
 
     const result: WasteAnalysisResult = {
       itemName: parsed.itemName || 'Unknown Item',
@@ -172,8 +187,48 @@ If the image is blurry, unclear, or doesn't show waste, use "unknown" category w
       binColor: categoryInfo.binColor,
       binType: categoryInfo.binType,
       disposalTip: parsed.disposalTip || categoryInfo.defaultTip,
-      confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)),
+      confidence,
+      pointsEarned,
     };
+
+    // If user is logged in, save the scan and update points
+    if (userId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+        // Save scan to history
+        await supabase.from('scan_history').insert({
+          user_id: userId,
+          item_name: result.itemName,
+          category: result.category,
+          bin_color: result.binColor,
+          bin_type: result.binType,
+          disposal_tip: result.disposalTip,
+          confidence: result.confidence,
+          points_earned: pointsEarned,
+        });
+
+        // Update user points and check for badges
+        if (pointsEarned > 0) {
+          const { data: pointsResult } = await supabase.rpc('add_scan_points', {
+            p_user_id: userId,
+            p_points: pointsEarned,
+            p_category: result.category,
+          });
+
+          if (pointsResult?.new_badges?.length > 0) {
+            result.newBadges = pointsResult.new_badges;
+          }
+        }
+
+        console.log('Scan saved for user:', userId, 'Points earned:', pointsEarned);
+      } catch (dbError) {
+        console.error('Error saving scan to database:', dbError);
+        // Don't fail the request, just log the error
+      }
+    }
 
     console.log('Analysis result:', result);
 

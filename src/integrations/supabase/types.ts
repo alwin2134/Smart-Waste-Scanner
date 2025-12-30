@@ -14,16 +14,189 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      badges: {
+        Row: {
+          category_required: string | null
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          points_required: number | null
+          scans_required: number | null
+        }
+        Insert: {
+          category_required?: string | null
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          name: string
+          points_required?: number | null
+          scans_required?: number | null
+        }
+        Update: {
+          category_required?: string | null
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          points_required?: number | null
+          scans_required?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          eco_points: number
+          id: string
+          last_scan_date: string | null
+          level: number
+          streak_days: number
+          total_scans: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          eco_points?: number
+          id?: string
+          last_scan_date?: string | null
+          level?: number
+          streak_days?: number
+          total_scans?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          eco_points?: number
+          id?: string
+          last_scan_date?: string | null
+          level?: number
+          streak_days?: number
+          total_scans?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scan_history: {
+        Row: {
+          bin_color: string
+          bin_type: string
+          category: string
+          confidence: number
+          disposal_tip: string | null
+          id: string
+          image_url: string | null
+          item_name: string
+          points_earned: number
+          scanned_at: string
+          user_id: string
+        }
+        Insert: {
+          bin_color: string
+          bin_type: string
+          category: string
+          confidence: number
+          disposal_tip?: string | null
+          id?: string
+          image_url?: string | null
+          item_name: string
+          points_earned?: number
+          scanned_at?: string
+          user_id: string
+        }
+        Update: {
+          bin_color?: string
+          bin_type?: string
+          category?: string
+          confidence?: number
+          disposal_tip?: string | null
+          id?: string
+          image_url?: string | null
+          item_name?: string
+          points_earned?: number
+          scanned_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_scan_points: {
+        Args: { p_category: string; p_points: number; p_user_id: string }
+        Returns: Json
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +323,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "admin"],
+    },
   },
 } as const
