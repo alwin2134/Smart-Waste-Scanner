@@ -188,3 +188,8 @@
   50% { opacity: 1; }
   100% { transform: translateY(100%); opacity: 0; }
 }
+
+/* Safe area for bottom nav */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
