@@ -1,0 +1,4 @@
+project_id = "pygowalgljufgckohknb"
+
+[functions.analyze-waste]
+verify_jwt = false
