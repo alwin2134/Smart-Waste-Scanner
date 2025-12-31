@@ -8,6 +8,8 @@ import { BadgesGrid } from '@/components/BadgesGrid';
 import { ScanHistoryList } from '@/components/ScanHistoryList';
 import { BottomNav, TabType } from '@/components/BottomNav';
 import { NewBadgeModal } from '@/components/NewBadgeModal';
+import { Leaderboard } from '@/components/Leaderboard';
+import { LinkAccountModal } from '@/components/LinkAccountModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,11 +32,14 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [newBadge, setNewBadge] = useState<Badge | null>(null);
+  const [showLinkModal, setShowLinkModal] = useState(false);
   
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { profile, badges, earnedBadges, scanHistory, refreshData } = useProfile();
+  
+  const isGuest = user?.is_anonymous;
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -162,13 +167,20 @@ export default function Index() {
       case 'history':
         return <ScanHistoryList history={scanHistory} />;
 
+      case 'leaderboard':
+        return <Leaderboard />;
+
       case 'badges':
         return <BadgesGrid allBadges={badges} earnedBadges={earnedBadges} />;
 
       case 'profile':
         return (
           <div className="space-y-6">
-            <ProfileHeader profile={profile} />
+            <ProfileHeader 
+              profile={profile} 
+              isGuest={isGuest} 
+              onLinkAccount={() => setShowLinkModal(true)} 
+            />
             {earnedBadges.length > 0 && (
               <div className="space-y-3">
                 <h3 className="font-semibold">Your Badges</h3>
@@ -217,6 +229,13 @@ export default function Index() {
 
       {/* New badge modal */}
       <NewBadgeModal badge={newBadge} onClose={() => setNewBadge(null)} />
+
+      {/* Link account modal for guests */}
+      <LinkAccountModal 
+        isOpen={showLinkModal} 
+        onClose={() => setShowLinkModal(false)}
+        onSuccess={refreshData}
+      />
     </div>
   );
 }

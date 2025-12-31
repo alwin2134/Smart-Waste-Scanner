@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Recycle, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Recycle, Mail, Lock, User, ArrowRight, Loader2, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,9 +20,10 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, signInAsGuest, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -112,6 +113,28 @@ export default function Auth() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsGuestLoading(true);
+    try {
+      const { error } = await signInAsGuest();
+      if (error) {
+        toast({
+          title: 'Guest Login Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Welcome, Guest!',
+          description: 'You can start scanning now. Create an account anytime to save your progress.',
+        });
+        navigate('/');
+      }
+    } finally {
+      setIsGuestLoading(false);
     }
   };
 
@@ -230,6 +253,37 @@ export default function Auth() {
                   : 'Already have an account? Sign in'}
               </button>
             </div>
+
+            {/* Guest login divider */}
+            <div className="relative mt-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            {/* Guest login button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGuestLogin}
+              disabled={isGuestLoading}
+              className="w-full mt-4 rounded-full py-5"
+            >
+              {isGuestLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <UserX className="w-5 h-5 mr-2" />
+                  Continue as Guest
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Try the app without an account. You can save your progress later.
+            </p>
           </div>
         </div>
       </main>

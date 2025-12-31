@@ -1,7 +1,7 @@
-import { Camera, History, Award, User } from 'lucide-react';
+import { Camera, History, Award, User, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type TabType = 'scan' | 'history' | 'badges' | 'profile';
+export type TabType = 'scan' | 'history' | 'badges' | 'leaderboard' | 'profile';
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -11,6 +11,7 @@ interface BottomNavProps {
 const tabs = [
   { id: 'scan' as TabType, icon: Camera, label: 'Scan' },
   { id: 'history' as TabType, icon: History, label: 'History' },
+  { id: 'leaderboard' as TabType, icon: Trophy, label: 'Rank' },
   { id: 'badges' as TabType, icon: Award, label: 'Badges' },
   { id: 'profile' as TabType, icon: User, label: 'Profile' },
 ];
