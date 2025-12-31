@@ -1,13 +1,15 @@
-import { User, Flame, Star, LogOut } from 'lucide-react';
+import { User, Flame, Star, LogOut, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Profile } from '@/hooks/useProfile';
 
 interface ProfileHeaderProps {
   profile: Profile | null;
+  isGuest?: boolean;
+  onLinkAccount?: () => void;
 }
 
-export function ProfileHeader({ profile }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isGuest, onLinkAccount }: ProfileHeaderProps) {
   const { user, signOut } = useAuth();
 
   if (!profile) return null;
@@ -25,8 +27,12 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
               <User className="w-6 h-6" />
             </div>
             <div>
-              <p className="font-semibold">{profile.display_name || 'Eco Warrior'}</p>
-              <p className="text-sm opacity-90">{user?.email}</p>
+              <p className="font-semibold">
+                {isGuest ? 'Guest User' : (profile.display_name || 'Eco Warrior')}
+              </p>
+              <p className="text-sm opacity-90">
+                {isGuest ? 'Playing as guest' : user?.email}
+              </p>
             </div>
           </div>
           <Button
@@ -39,6 +45,28 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </Button>
         </div>
       </div>
+
+      {/* Guest banner */}
+      {isGuest && onLinkAccount && (
+        <div className="p-3 bg-accent/50 border-b border-border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Save your progress!</p>
+              <p className="text-xs text-muted-foreground truncate">
+                Create an account to keep your points & badges
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={onLinkAccount}
+              className="shrink-0 rounded-full gradient-eco"
+            >
+              <Link2 className="w-4 h-4 mr-1" />
+              Link
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="p-4">
