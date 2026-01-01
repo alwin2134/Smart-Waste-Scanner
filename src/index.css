@@ -189,6 +189,15 @@
   100% { transform: translateY(100%); opacity: 0; }
 }
 
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
 /* Safe area for bottom nav */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
