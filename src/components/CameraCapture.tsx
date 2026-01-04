@@ -15,6 +15,7 @@ export function CameraCapture({ onCapture, isLoading }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Cleanup camera on unmount
@@ -26,10 +27,20 @@ export function CameraCapture({ onCapture, isLoading }: CameraCaptureProps) {
     };
   }, []);
 
+  // Check if device is mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
   const startCamera = async () => {
     setCameraError(null);
+    
+    // On mobile devices, use the native camera input for better compatibility
+    if (isMobile) {
+      cameraInputRef.current?.click();
+      return;
+    }
+    
+    // On desktop, use getUserMedia for live camera feed
     try {
-      // Request camera with mobile-optimized constraints
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode: { ideal: 'environment' },
@@ -44,7 +55,6 @@ export function CameraCapture({ onCapture, isLoading }: CameraCaptureProps) {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().then(() => {
             setIsCameraReady(true);
@@ -55,8 +65,7 @@ export function CameraCapture({ onCapture, isLoading }: CameraCaptureProps) {
     } catch (error) {
       console.error('Camera access error:', error);
       setCameraError('Camera not available. Please use file upload.');
-      // Fallback to file upload on camera error
-      fileInputRef.current?.click();
+      cameraInputRef.current?.click();
     }
   };
 
@@ -261,11 +270,21 @@ export function CameraCapture({ onCapture, isLoading }: CameraCaptureProps) {
   // Idle state - show capture buttons
   return (
     <div className="flex flex-col items-center gap-5 sm:gap-6 py-6 sm:py-8">
-      {/* Hidden file input with mobile-optimized attributes */}
+      {/* Hidden file input for gallery/file upload */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+      
+      {/* Hidden camera input for mobile devices - opens native camera */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={handleFileUpload}
         className="hidden"
       />
